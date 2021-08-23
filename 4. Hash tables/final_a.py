@@ -1,76 +1,57 @@
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
-A = 107
-M = 1000007
+COUNT = 0
 
 
 class SearchIndex:
     def __init__(self):
-        self.docs = []
-        self.requests = []
-        self.read_data()
+        self.docs = {}
+        self.requests = {}
 
-    def read_data(self):
-        doc_count = int(input())
-        for _ in range(doc_count):
-            self.docs.append(input().split())
-        req_count = int(input())
-        for _ in range(req_count):
-            self.requests.append(input().split())
-
-    def hashing_docs(self):
-        for num_doc, doc in enumerate(self.docs):
-            doc_word = {}
+    def hashing_words(self):
+        words = {}
+        global COUNT
+        COUNT = int(input())
+        for i in range(COUNT):
+            doc = [x for x in input().split()]
             for word in doc:
-                doc_word[word] = doc_word.get(word, 0) + 1
-            self.docs[num_doc] = doc_word
+                tmp = words.get(word, {})
+                tmp[i+1] = tmp.get(i+1, 0) + 1
+                words[word] = tmp
+        return words
 
-    def hashing_request(self):
-        for num_request, request in enumerate(self.requests):
-            request_word = set()
-            for req_word in request:
-                request_word.add(req_word)
-            self.requests[num_request] = request_word
-
-    def hash_word(self):
-        self.hashing_docs()
-        self.hashing_request()
+    def sort_requests(self, requests: List[Dict[int, int]]):
+        requests = requests[1:]
+        result = []
+        for num_elem, request in enumerate(requests):
+            line = []
+            for key, value in request.items():
+                line.append((-1 * value, key))
+            line.sort()
+            result.append(line[:5])
+        return result
 
     def analysis(self) -> List[List[Tuple[int, int]]]:
-        result = []
-        for request in self.requests:
-            request_scores = []
-            for num_doc, doc in enumerate(self.docs):
-                score = 0
-                for request_word in request:
-                    score += doc.get(request_word, 0)
-                request_scores.append((-1 * score, num_doc + 1))
-            request_scores.sort()
-            result.append(request_scores[:5])
+        result = [{} for _ in range(COUNT + 1)]
+        for request_word, request_word_info in self.requests.items():
+            try:
+                elem = self.docs[request_word]
+                for num_doc, score in elem.items():
+                    for num_request in request_word_info.keys():
+                        result[num_request][num_doc] = result[num_request].get(num_doc, 0) + score
+            except KeyError:
+                pass
+        result = self.sort_requests(result)
         return result
 
 
-def get_five_docs(relevants: List[Tuple[int, int]]):
-    length = len(relevants)
-    limit = length if length < 5 else 5
-    for i in range(limit):
-        yield relevants[i]
-
-
 def print_relevant_info(relevant_info: List[List[Tuple[int, int]]]) -> None:
-    result = []
     for line in relevant_info:
-        tmp = [str(x[1]) for x in get_five_docs(line) if x[0] != 0]
-        try:
-            _ = tmp[0]
-            result.append(' '.join(tmp))
-        except IndexError:
-            pass
-    print('\n'.join(result))
-
+        print(' '.join((str(x[1]) for x in line if x[0] != 0)))
 
 if __name__ == '__main__':
     s_ind = SearchIndex()
-    s_ind.hash_word()
+    s_ind.docs = s_ind.hashing_words()
+    s_ind.requests = s_ind.hashing_words()
     relevant_info = s_ind.analysis()
     print_relevant_info(relevant_info)
