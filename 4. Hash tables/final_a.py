@@ -1,6 +1,46 @@
-from typing import List, Tuple, Dict
+"""
+ID решения: 52408995
 
-COUNT = 0
+--- ПРИНЦИП РАБОТЫ ---
+    Создается экземпляр класса SearchIndex, в котором будут хранится в удобном виде
+    считанные документы и запросы.
+    Затем происходит считывание входных данных в 2 этапа: сначала документы, потом
+    запросы. Документы сохраняются в виде словаря, где ключи - это слова, встретившиеся
+    в документах, а значения - вложенные словари, где ключ - номер документа, значение -
+    количество вхождений слова в документ. Запросы хранятся в виде словаря, где ключ -
+    номер запроса, а значение - множество слов в запросе.
+    Дальше идет расчет релевантности запросов документам. Создается результирующий список
+    словарей размером количество запросов + 1 (сделано для удобства, так как выводить
+    номера документов надо начиная с единицы, и чтоб в процессе подсчета и сохранения
+    запросов не приходилось заморачиваться с вычитанием 1 для получения индекса). Каждый
+    словарь в списке обозначает запрос, в котором ключи - номер документа, а значения -
+    релевантность запроса под номером, соответствующий индексу документа, этому документу.
+    Подсчет релевантности происходит следующим образом: из словаря с информацией о запросах
+    берестя номер запроса и множество слов из запроса, проходим циклом по словам из множества,
+    по слову из словаря документов получае в каких документах и сколько раз встречается
+    это слово. В результирующем списке в соответствующем номеру запроса словаре увеличиваем
+    релевантность запроса соответствующему документу на количество вхождений слова. Так
+    проходим по всем словам в запросе. После чего заменяем элемент результирующего списка
+    следующим образом: из начального словаря создаем список кортежей, где первый элемент -
+    релевантность документа умноженная на -1 (надо для дефолтной сортировки), второй - номер
+    документа. После преобразования словаря в список кортежей список сортируется и усекается
+    до 5 элементов. Полученный список занимает место в результирующем списке. Процедура
+    повторяется для всех запросов.
+    Полученный таким способом список распечатывается в консоль (естественно с некоторыми
+    нехитрыми преобразованиями)
+
+--- ВРЕМЕННАЯ СЛОЖНОСТЬ ---
+    Считывание и сохранение документов и запросов занимает O(n), процесс подсчета релевантности
+    O(n * m),где n - количество документов и запросов, m - количество слов в них
+
+--- ПРОСТРАНСТВЕННЯ СЛОЖНОСТЬ ---
+    Хранение словарей с документами и запросами занимает O(n * m) дополнительной памяти,где
+    n - количество документов и запросов, m - количество слов в них, результирующий список
+    еще в среднем O(5n). Итоговая пространственная сложность составляет O(n)
+"""
+
+
+from typing import List, Tuple, Dict
 
 
 class SearchIndex:
@@ -8,11 +48,10 @@ class SearchIndex:
         self.docs = {}
         self.requests = {}
 
-    def hashing_words(self):
+    def hashing_docs(self):
         words = {}
-        global COUNT
-        COUNT = int(input())
-        for i in range(COUNT):
+        count = int(input())
+        for i in range(count):
             doc = [x for x in input().split()]
             for word in doc:
                 tmp = words.get(word, {})
@@ -20,38 +59,44 @@ class SearchIndex:
                 words[word] = tmp
         return words
 
-    def sort_requests(self, requests: List[Dict[int, int]]):
-        requests = requests[1:]
-        result = []
-        for num_elem, request in enumerate(requests):
-            line = []
-            for key, value in request.items():
-                line.append((-1 * value, key))
-            line.sort()
-            result.append(line[:5])
-        return result
+    def hashing_requests(self):
+        words = {}
+        count = int(input())
+        for i in range(count):
+            request = set([x for x in input().split()])
+            words[i+1] = request
+        return words
 
-    def analysis(self) -> List[List[Tuple[int, int]]]:
-        result = [{} for _ in range(COUNT + 1)]
-        for request_word, request_word_info in self.requests.items():
-            try:
-                elem = self.docs[request_word]
-                for num_doc, score in elem.items():
-                    for num_request in request_word_info.keys():
+    def sort_request_score(self, request: Dict[int, int]):
+        result = []
+        for key, value in request.items():
+            result.append((-1 * value, key))
+        result.sort()
+        return result[:5]
+
+    def analysis(self) -> List[Dict[int, int]]:
+        result = [{} for _ in range(len(self.requests) + 1)]
+        for num_request, request_words in self.requests.items():
+            for request_word in request_words:
+                try:
+                    elem = self.docs[request_word]
+                    for num_doc, score in elem.items():
                         result[num_request][num_doc] = result[num_request].get(num_doc, 0) + score
-            except KeyError:
-                pass
-        result = self.sort_requests(result)
-        return result
+                except KeyError:
+                    pass
+            result[num_request] = self.sort_request_score(result[num_request])
+        return result[1:]
 
 
 def print_relevant_info(relevant_info: List[List[Tuple[int, int]]]) -> None:
+    result = []
     for line in relevant_info:
-        print(' '.join((str(x[1]) for x in line if x[0] != 0)))
+        result.append(' '.join((str(x[1]) for x in line if x[0] != 0)))
+    print('\n'.join(result))
 
 if __name__ == '__main__':
     s_ind = SearchIndex()
-    s_ind.docs = s_ind.hashing_words()
-    s_ind.requests = s_ind.hashing_words()
+    s_ind.docs = s_ind.hashing_docs()
+    s_ind.requests = s_ind.hashing_requests()
     relevant_info = s_ind.analysis()
     print_relevant_info(relevant_info)
