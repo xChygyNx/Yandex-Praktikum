@@ -1,14 +1,14 @@
 """
-ID решения: 52373151
+ID решения: 52437113
 
 ---ПРИНЦИП РАБОТЫ---
-    Сначала создается объект класса DB, в котором прописаны методы put, get и delete.
+    Сначала создается объект класса HashTable, в котором прописаны методы put, get и delete.
     Затем команды считываются с командной строки, и при помощи getattr вызывается нужный
-    метод DB.
+    метод HashTable.
     Хранилище элементов представляем из себя массив, размерностью HASH_TABLE_SIZE (в данном
-    конкретном решении взято число 9973, как наибольшее простое число меньше 10^5). Индекс
+    конкретном решении взято число 99991, как наибольшее простое число меньше 10^5). Индекс
     массива, в который будет записан элемент, определяется как остаток от деления значения
-    элемента на HASH_TABLE_SIZE. При созданиии объекта класса DB во всех ячейках хранилища
+    элемента на HASH_TABLE_SIZE. При созданиии объекта класса HashTable во всех ячейках хранилища
     лежит None. Коллизии решаются методом цепочек.
     Put - определяется индекс хранилища, где будет лежать информациия, путем получения остатка
     от деления id на HASH_TABLE_SIZE. Если в ячейке лежит None (раньще в эту ячейку ничего
@@ -36,16 +36,18 @@ ID решения: 52373151
     временная сложность данных операций возрастает до O(n)
 
     ---ПРОСТРАНСТВЕННАЯ СЛОЖНОСТЬ---
-    Размер хранилища постоянный, т.е. пространственная сложность О(1). Но объем информации в каждой
-    ячейке зависит от количества коллизий, т.е. равняется O(n)
+    Размер хранилища постоянный, т.е. пространственная сложность O(max(n, m)), где
+    n - количество добавленных пар (ключ, значение), а m - размер самой хэш-таблицы.
+    Но объем информации в каждой ячейке зависит от количества коллизий, т.е. это дополнительно
+    O(к) памяти, где к - количество коллизий
 """
 
 
 
-from typing import Optional, Tuple
+from typing import Optional
 
 
-HASH_TABLE_SIZE = 9973
+HASH_TABLE_SIZE = 99991
 
 
 class Node:
@@ -54,13 +56,13 @@ class Node:
         self.salary = salary
         self.next = next
 
-class DB:
-    def __init__(self):
-        self.store = [None] * HASH_TABLE_SIZE
+class HashTable:
+    def __init__(self, hash_size: int):
+        self.hash_size = hash_size
+        self.store = [None] * hash_size
 
-    def put(self, args: Tuple[int, int]) -> None:
-        key, value = args[0], args[1]
-        ind = key % HASH_TABLE_SIZE
+    def put(self, key: int, value: int) -> None:
+        ind = self.__get_index(key)
         if self.store[ind] is None:
             self.store[ind] = Node(key, value)
         else:
@@ -74,24 +76,23 @@ class DB:
                     return
                 node = node.next
 
-    def get(self, args: Tuple[int]) -> Optional[int]:
-        key = args[0]
-        ind = key % HASH_TABLE_SIZE
+    def __get_index(self, num: int):
+        return num % self.hash_size
+
+    def get(self, key: int) -> Optional[int]:
+        ind = self.__get_index(key)
         node = self.store[ind]
-        if node is None:
-            pass
-        else:
+        if node is not None:
             while node is not None:
                 if node.id == key:
                     return node.salary
                 node = node.next
         return None
 
-    def delete(self, args: Tuple[int]) -> Optional[int]:
-        key = args[0]
-        ind = key % HASH_TABLE_SIZE
+    def delete(self, key: int) -> Optional[int]:
+        ind = self.__get_index(key)
         node = self.store[ind]
-        if node is None:
+        if node is None:        #здесь оставил это условие с pass так как где-то читал, что не комильфо в функции делать return во множестве мест (хотя возможно эта статья о другом ЯП была)
             pass
         elif node.id == key:
             self.store[ind] = node.next
@@ -109,18 +110,14 @@ class DB:
 
 
 def execute_commands() -> None:
-    db = DB()
+    ht = HashTable(HASH_TABLE_SIZE)
     count = int(input())
     results = []
     res_len = 0
     for _ in range(count):
         line = input().split()
         cmd = line[0]
-        if cmd == 'put':
-            args = int(line[1]), int(line[2])
-        else:
-            args = int(line[1]),
-        result = getattr(db, cmd)(args)
+        result = getattr(ht, cmd)(*map(int, line[1:]))
         if cmd != 'put':
             results.append(result)
             res_len += 1
