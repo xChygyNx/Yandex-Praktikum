@@ -92,8 +92,8 @@ class HashTable:
     def delete(self, key: int) -> Optional[int]:
         ind = self.__get_index(key)
         node = self.store[ind]
-        if node is None:        #здесь оставил это условие с pass так как где-то читал, что не комильфо в функции делать return во множестве мест (хотя возможно эта статья о другом ЯП была)
-            pass
+        if node is None:
+            return
         elif node.id == key:
             self.store[ind] = node.next
             node.next = None
