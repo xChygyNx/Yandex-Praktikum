@@ -5,15 +5,15 @@ def read_edges(n_vertex: int, n_edge: int) -> Dict[int, Dict[int, int]]:
     result = dict([(x + 1, {}) for x in range(n_vertex)])
     for _ in range(n_edge):
         src, dst, distance = [int(x) for x in input().split()]
-        result[src][dst] = distance
-        result[dst][src] = distance
+        result[src][dst] = max(distance, result.get(src, {}).get(dst, 0))
+        result[dst][src] = max(distance, result.get(dst, {}).get(src, 0))
     return result
 
 
 def find_max_path(edges: Dict[int, Dict[int, int]], unvisit_vertexes: Set[int]) -> int:
     path_length = 0
     current_vertex = 1
-    pool = dict([(x, {}) for x in unvisit_vertexes])
+    pool = {}
     pool[current_vertex] = edges[current_vertex]
     while len(unvisit_vertexes) != 0:
         max_distance = 0
@@ -27,7 +27,8 @@ def find_max_path(edges: Dict[int, Dict[int, int]], unvisit_vertexes: Set[int]) 
             path_length += max_distance
             unvisit_vertexes.remove(far_vertex)
             pool[far_vertex] = edges[far_vertex]
-            pool[src_vertex].pop(far_vertex)
+            edges[src_vertex].pop(far_vertex)
+            edges[far_vertex].pop(src_vertex)
         else:
             break
     return path_length
