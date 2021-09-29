@@ -41,7 +41,7 @@ ID решения: 53655802
 """
 
 from typing import Set
-from typing import Tuple, List
+from typing import Dict, Tuple
 import heapq
 
 
@@ -52,26 +52,26 @@ class MaxPriorityQueue:
     def get(self) -> Tuple[int, int, int]:
         return heapq.heappop(self.queue)
 
-    def extend(self, line: List[int], src_vertex: int, unvisit_vertexes: Set[int]):
-        for i, elem in enumerate(line):
-            if i + 1 in unvisit_vertexes and elem != 0:
-                heapq.heappush(self.queue, (-1 * elem, src_vertex, i + 1))
+    def extend(self, edges: Dict[int, int], src_vertex: int, unvisit_vertexes: Set[int]):
+        for next_vertex, distance in edges.items():
+            if next_vertex in unvisit_vertexes:
+                heapq.heappush(self.queue, (-1 * distance, src_vertex, next_vertex))
 
 
-def read_edges(n_vertex: int, n_edge: int) -> List[List[int]]:
-    result = [[0 for _ in range(n_vertex)] for _ in range(n_vertex)]
+def read_edges(n_vertex: int, n_edge: int) -> Dict[int, Dict[int, int]]:
+    result = dict([(x + 1, {}) for x in range(n_vertex)])
     for _ in range(n_edge):
         src, dst, distance = [int(x) for x in input().split()]
-        value = max(distance, result[src - 1][dst - 1])
-        result[src - 1][dst - 1] = value
-        result[dst - 1][src - 1] = value
+        value = max(distance, result.get(src - 1, {}).get(dst - 1, 0))
+        result[src][dst] = value
+        result[dst][src] = value
     return result
 
 
-def find_max_path(edges: List[List[int]], unvisit_vertexes: Set[int]) -> int:
+def find_max_path(edges: Dict[int, Dict[int, int]], unvisit_vertexes: Set[int]) -> int:
     path_length = 0
     pool = MaxPriorityQueue()
-    pool.extend(edges[0], 1, unvisit_vertexes)
+    pool.extend(edges[1], 1, unvisit_vertexes)
     while len(unvisit_vertexes) != 0:
         try:
             while True:
@@ -79,9 +79,9 @@ def find_max_path(edges: List[List[int]], unvisit_vertexes: Set[int]) -> int:
                 if dst_vertex in unvisit_vertexes:
                     path_length += -1 * distance
                     unvisit_vertexes.remove(dst_vertex)
-                    edges[src_vertex-1][dst_vertex-1] = 0
-                    edges[dst_vertex-1][src_vertex-1] = 0
-                    pool.extend(edges[dst_vertex - 1], src_vertex, unvisit_vertexes)
+                    edges[src_vertex].pop(dst_vertex)
+                    edges[dst_vertex].pop(src_vertex)
+                    pool.extend(edges.get(dst_vertex, {}), src_vertex, unvisit_vertexes)
                     break
         except IndexError:
             break
