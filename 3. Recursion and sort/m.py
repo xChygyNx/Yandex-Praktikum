@@ -8,8 +8,8 @@ def int_or_float(num: float) -> Union[int, float]:
 
 
 def find_mediana(islands1: List[int], islands2: List[int], len1: int, len2: int) -> Union[int, float]:
-    k = (len1 + len2) // 2
     is_even = (len1 + len2) % 2 == 0
+    k = len1 // 2
     mid = search(islands1, islands2, ks)
 
 
